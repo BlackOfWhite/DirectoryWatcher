@@ -5,16 +5,15 @@ Implementation of JDK7's java.nio.file.WatchService that supports file change no
 ## Getting Started
 
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system. There are six callbacks in the DirectoryWatcherCallback interface:
-* onFileCreated
-* onFileModified
-* onFileRemoved
-* onDirectoryCreated
-* onDirectoryModified
-* onDirectoryRemoved
+* onPathCreated
+* onPathModified
+* onPathRemoved
 
 Set *recursive* to enable recursion. Use *maxDepth* to set the maximum depth to traverse when recursively processing a directory.
 
 Set *fileFilter* to monitor only files matching given filter, e.g., *.png*, *.txt*.
+
+You can refer to */test/java/DirectoryWatcherTest.java* for reference and implementation example.
 
 ## Authors
 
