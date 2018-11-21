@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
 
-  private static final String ALLOW_ALL = "ALLOW_ALL";
+  public static final String ALLOW_ALL = "ALLOW_ALL";
   private static Logger logger = LoggerFactory.getLogger(DirectoryWatcher.class);
   private final boolean recursive;
   private Path rootPath;
@@ -32,6 +32,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
   private int maxDepth;
   private String fileFilter;
   private Thread thread;
+  private boolean notifyDirectories;
 
   public DirectoryWatcher(Path rootPath, boolean recursive) throws IOException {
     this(rootPath, recursive, Integer.MAX_VALUE, ALLOW_ALL);
@@ -45,6 +46,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
     this.maxDepth = maxDepth;
     this.fileFilter = fileFilter;
     this.thread = new Thread(this, "DirectoryWatcherRunnable");
+    this.notifyDirectories = true;
   }
 
   @SuppressWarnings("unchecked")
@@ -80,9 +82,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
           throws IOException {
         if (Files.isDirectory(dir)) {
           register(dir);
-        } else if (isFileAllowed(dir)) {
-          callback();
-          register(dir);
+          callback(dir, ENTRY_CREATE);
         }
         return FileVisitResult.CONTINUE;
       }
@@ -120,8 +120,8 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
           } catch (IOException e) {
             logger.warn("Failed to access directory: {}", child, e);
           }
-        } else if (isFileAllowed(child)) {
-          callback();
+        } else if (isFileAllowed(child)) { // callbacks for files from the root level
+          callback(child, kind);
         }
       }
 
@@ -172,9 +172,12 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
     return rootPath;
   }
 
-  @Override
-  public void callback() {
-    logger.debug("DirectoryWatcher callback");
+  public boolean isNotifyDirectories() {
+    return notifyDirectories;
+  }
+
+  public void setNotifyDirectories(boolean notifyDirectories) {
+    this.notifyDirectories = notifyDirectories;
   }
 
   @Override
@@ -191,5 +194,34 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
       return;
     }
     processEvents();
+  }
+
+  @Override
+  public void pathCreated(Path path) {
+    logger.debug("Path created.");
+  }
+
+  @Override
+  public void pathModified(Path path) {
+    logger.debug("Path modified.");
+  }
+
+  @Override
+  public void pathRemoved(Path path) {
+    logger.debug("Path removed.");
+  }
+
+  private void callback(Path path, WatchEvent.Kind kind) {
+    if (Files.isDirectory(path) && !notifyDirectories) {
+      logger.debug("Notifications for directories are off.");
+    }
+    if (kind == ENTRY_CREATE) {
+      pathCreated(path);
+    } else if (kind == ENTRY_MODIFY) {
+      pathModified(path);
+    } else if (kind == ENTRY_DELETE) {
+      pathRemoved(path);
+    } else {
+    }
   }
 }
