@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
 
   public static final String ALLOW_ALL = "ALLOW_ALL";
+  private static final String THREAD_ID = "DirectoryWatcherRunnable";
   private static Logger logger = LoggerFactory.getLogger(DirectoryWatcher.class);
   private final boolean recursive;
   private Path rootPath;
@@ -33,6 +34,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
   private String fileFilter;
   private Thread thread;
   private boolean notifyDirectories;
+  private volatile boolean running;
 
   public DirectoryWatcher(Path rootPath, boolean recursive) throws IOException {
     this(rootPath, recursive, Integer.MAX_VALUE, ALLOW_ALL);
@@ -45,7 +47,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
     this.keys = new HashMap<>();
     this.maxDepth = maxDepth;
     this.fileFilter = fileFilter;
-    this.thread = new Thread(this, "DirectoryWatcherRunnable");
+    this.thread = new Thread(this, "");
     this.notifyDirectories = true;
   }
 
@@ -56,10 +58,15 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
 
   public void start() {
     try {
+      this.running = true;
       this.thread.start();
     } catch (IllegalStateException e) {
       logger.warn("DirectoryWatcher was already started.", e);
     }
+  }
+
+  public void close() {
+    this.running = false;
   }
 
   /**
@@ -93,11 +100,13 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
    * Process all events for keys queued to the watcher
    */
   void processEvents() {
-    for (; ; ) {
+    while (running) {
       WatchKey key;
       try {
         key = service.take();
-      } catch (InterruptedException x) {
+      } catch (InterruptedException e) {
+        logger.warn("Unexpected exception while running {} thread.", THREAD_ID, e);
+        this.running = false;
         return;
       }
 
@@ -135,6 +144,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
         }
       }
     }
+    logger.info("{} was successfully stopped.", THREAD_ID);
   }
 
   private int getPathDepth(Path path) {
@@ -178,6 +188,10 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
 
   public void setNotifyDirectories(boolean notifyDirectories) {
     this.notifyDirectories = notifyDirectories;
+  }
+
+  public boolean isRunning() {
+    return running;
   }
 
   @Override

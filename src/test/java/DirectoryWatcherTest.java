@@ -16,6 +16,7 @@ import java.util.Objects;
 import org.directory.watcher.DirectoryWatcher;
 import org.hamcrest.CoreMatchers;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,28 +27,15 @@ public class DirectoryWatcherTest {
   private static Logger logger = LoggerFactory.getLogger(DirectoryWatcherTest.class);
   private List<PathEvent> eventList = Collections.synchronizedList(new ArrayList<>());
 
+  @Before
+  public void setUp() {
+    eventList.clear();
+  }
+
   @Test
   public void overrideAndInitialize() {
     try {
-      DirectoryWatcher watcher = new DirectoryWatcher(resourcesDirectory, true) {
-        @Override
-        public void pathCreated(Path path) {
-          logger.info("Path created: " + path);
-          eventList.add(new PathEvent(path, ENTRY_CREATE));
-        }
-
-        @Override
-        public void pathModified(Path path) {
-          logger.info("Path modified: " + path);
-          eventList.add(new PathEvent(path, ENTRY_MODIFY));
-        }
-
-        @Override
-        public void pathRemoved(Path path) {
-          logger.info("Path removed: " + path);
-          eventList.add(new PathEvent(path, ENTRY_DELETE));
-        }
-      };
+      DirectoryWatcher watcher = getWatcher();
       Assert.assertNotNull(watcher);
       Assert.assertEquals(watcher.isRecursive(), true);
       Assert.assertEquals(watcher.getFileFilter(), ALLOW_ALL);
@@ -65,6 +53,42 @@ public class DirectoryWatcherTest {
     } catch (IOException | InterruptedException e) {
       e.printStackTrace();
     }
+  }
+
+  @Test
+  public void startAndStopTest() {
+    try {
+      DirectoryWatcher watcher = getWatcher();
+      watcher.start();
+      Assert.assertTrue(watcher.isRunning());
+      Thread.sleep(1000);
+      watcher.close();
+      Assert.assertFalse(watcher.isRunning());
+    } catch (IOException | InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
+  private DirectoryWatcher getWatcher() throws IOException {
+    return new DirectoryWatcher(resourcesDirectory, true) {
+      @Override
+      public void pathCreated(Path path) {
+        logger.info("Path created: " + path);
+        eventList.add(new PathEvent(path, ENTRY_CREATE));
+      }
+
+      @Override
+      public void pathModified(Path path) {
+        logger.info("Path modified: " + path);
+        eventList.add(new PathEvent(path, ENTRY_MODIFY));
+      }
+
+      @Override
+      public void pathRemoved(Path path) {
+        logger.info("Path removed: " + path);
+        eventList.add(new PathEvent(path, ENTRY_DELETE));
+      }
+    };
   }
 
   private class PathEvent {
