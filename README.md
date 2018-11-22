@@ -9,7 +9,9 @@ These instructions will get you a copy of the project up and running on your loc
 * onPathModified
 * onPathRemoved
 
-Set *recursive* to enable recursion. Use *maxDepth* to set the maximum depth to traverse when recursively processing a directory.
+Set *recursive* to enable recursion. 
+
+Use *maxDepth* to set the maximum depth to traverse when recursively processing a directory.
 
 Set *fileFilter* to monitor only files matching given filter, e.g., *.png*, *.txt*.
 
