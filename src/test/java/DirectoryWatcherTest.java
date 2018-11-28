@@ -66,7 +66,12 @@ public class DirectoryWatcherTest {
             DirectoryWatcher watcher = getWatcher();
             watcher.start();
             Assert.assertTrue(watcher.isRunning());
-            Thread.sleep(1000);
+            Thread.sleep(500);
+            watcher.close();
+            Assert.assertFalse(watcher.isRunning());
+            watcher.start();
+            Assert.assertTrue(watcher.isRunning());
+            Thread.sleep(500);
             watcher.close();
             Assert.assertFalse(watcher.isRunning());
         } catch (IOException | InterruptedException e) {

@@ -40,7 +40,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
         this.keys = new HashMap<>();
         this.maxDepth = maxDepth;
         this.fileFilters = fileFilters;
-        this.thread = new Thread(this, "");
+        this.thread = new Thread(this, THREAD_ID);
         this.notifyDirectories = true;
     }
 
@@ -49,9 +49,11 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
         return (WatchEvent<T>) event;
     }
 
-    public void start() {
+    public void start() throws IOException {
         try {
             this.running = true;
+            this.service = FileSystems.getDefault().newWatchService();
+            this.thread = new Thread(this, THREAD_ID);
             this.thread.start();
         } catch (IllegalStateException e) {
             logger.warn("DirectoryWatcher was already started.", e);
@@ -59,12 +61,12 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
     }
 
     public void close() {
-        this.running = false;
         try {
             this.service.close();
         } catch (IOException e) {
             logger.warn("Unexpected exception while closing WatchService.", e);
         }
+        this.running = false;
     }
 
     /**
@@ -102,6 +104,8 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
             WatchKey key;
             try {
                 key = service.take();
+            } catch (ClosedWatchServiceException e) {
+                continue;
             } catch (InterruptedException e) {
                 logger.warn("Unexpected exception while running {} thread.", THREAD_ID, e);
                 close();
