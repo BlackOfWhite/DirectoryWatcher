@@ -67,6 +67,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
             logger.warn("Unexpected exception while closing WatchService.", e);
         }
         this.running = false;
+        this.service.close();
     }
 
     /**
