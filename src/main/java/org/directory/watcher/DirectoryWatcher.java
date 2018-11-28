@@ -60,6 +60,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
 
     public void close() {
         this.running = false;
+        this.service.close();
     }
 
     /**
@@ -99,7 +100,7 @@ public class DirectoryWatcher implements DirectoryWatcherCallback, Runnable {
                 key = service.take();
             } catch (InterruptedException e) {
                 logger.warn("Unexpected exception while running {} thread.", THREAD_ID, e);
-                this.running = false;
+                close();
                 return;
             }
 
