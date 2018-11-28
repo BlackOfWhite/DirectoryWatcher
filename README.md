@@ -13,7 +13,7 @@ Set *recursive* to enable recursion.
 
 Use *maxDepth* to set the maximum depth to traverse when recursively processing a directory.
 
-Set *fileFilter* to monitor only files matching given filter, e.g., *.png*, *.txt*.
+Set *fileFilters* to monitor only files matching given filter, e.g., *.png*, *.txt*.
 
 You can refer to */test/java/DirectoryWatcherTest.java* for reference and usage example.
 
